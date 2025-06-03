@@ -1,0 +1,19 @@
+{
+  "userName": "홍길동",
+  "gender": "남성",
+  "birth": {
+    "year": 1995,
+    "month": 5,
+    "day": 12,
+    "hour": 23
+  },
+  "saju": {
+    "year": { "stem": "을", "branch": "해" },
+    "month": { "stem": "정", "branch": "사" },
+    "day": { "stem": "무", "branch": "인" },
+    "hour": { "stem": "경", "branch": "자" }
+  },
+  "selectedItems": ["연애운", "성격"],
+  "question": "올해 제 운세는 어떤가요?"
+}
+
