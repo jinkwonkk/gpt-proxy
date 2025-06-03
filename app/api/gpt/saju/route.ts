@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getSajuPrompt } from 'src/utils/getSajuPrompt'
+import { getSajuPrompt } from '@/utils/getSajuPrompt'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userName, gender, birth, saju, question, selectedItems } = body
 
-    // 유효성 검사
     if (!userName || !gender || !birth || !saju || !selectedItems) {
       return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
         status: 400,
@@ -49,7 +48,7 @@ export async function POST(req: NextRequest) {
       selectedItems
     })
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -62,20 +61,24 @@ export async function POST(req: NextRequest) {
         top_p: 1,
         frequency_penalty: 0.2,
         presence_penalty: 0.2,
-        stream: false
+        stream: true
       })
     })
 
-    const result = await response.json()
+    if (!openaiResponse.ok || !openaiResponse.body) {
+      throw new Error('OpenAI 응답 오류 또는 body 없음')
+    }
 
-    console.log('🧠 OpenAI 응답 상태:', response.status)
-    console.log('📦 OpenAI 응답 내용:', result)
+    const stream = openaiResponse.body
 
-    return new NextResponse(JSON.stringify(result), {
+    return new Response(stream, {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'application/json'
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Transfer-Encoding': 'chunked',
       }
     })
   } catch (error: any) {
