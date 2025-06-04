@@ -26,9 +26,11 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
+
     const selfInfo: PersonInfo = body.selfInfo
     const partnerInfo: PersonInfo = body.partnerInfo
     const sajuData: { self: SajuResult; partner: SajuResult } = body.sajuData
+    const sectionPrompt: string | undefined = body.sectionPrompt  // ✅ 프론트에서 전달받은 프롬프트 구간
 
     if (!selfInfo || !partnerInfo || !sajuData) {
       return new NextResponse(JSON.stringify({ error: '필수 정보 누락' }), {
@@ -40,13 +42,13 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData)
+    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, sectionPrompt)
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`,
       },
       body: JSON.stringify({
         model: 'gpt-4',
@@ -55,17 +57,15 @@ export async function POST(req: NextRequest) {
         top_p: 1,
         frequency_penalty: 0.2,
         presence_penalty: 0.2,
-        stream: true
-      })
+        stream: true,
+      }),
     })
 
     if (!openaiRes.ok || !openaiRes.body) {
       throw new Error('OpenAI 응답 실패')
     }
 
-    const stream = openaiRes.body
-
-    return new Response(stream, {
+    return new Response(openaiRes.body, {
       status: 200,
       headers: {
         ...corsHeaders(),
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Transfer-Encoding': 'chunked',
-      }
+      },
     })
   } catch (err: any) {
     console.error('❌ GPT 호출 오류:', err)
