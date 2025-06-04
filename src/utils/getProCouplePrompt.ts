@@ -3,7 +3,8 @@ import { PersonInfo, SajuResult } from '../types/saju'
 export function getProCouplePrompt(
   selfInfo: PersonInfo,
   partnerInfo: PersonInfo,
-  sajuData: { self: SajuResult; partner: SajuResult }
+  sajuData: { self: SajuResult; partner: SajuResult },
+  extraPrompt?: string  // ✅ 항목 1~5, 6~10 등 추가 지시문
 ): string {
   return `
 당신은 사주 분석 전문가입니다. 다음 두 사람의 사주 명식을 바탕으로 궁합을 매우 상세하고 전문적으로 분석한 리포트를 작성해주세요. 각 항목은 실제 전문가가 설명하듯 논리적 근거와 함께 서술하며, 돈을 낸 고객이 만족할 만큼의 품질을 갖춰야 합니다.
@@ -28,6 +29,10 @@ export function getProCouplePrompt(
 - 부족한 오행: ${sajuData.partner.weakElement}
 - 일지(배우자 자리): ${sajuData.partner.spouseHint}
 
+${extraPrompt ? `
+[작성 방식 지시사항]
+${extraPrompt.trim()}
+` : `
 [작성 방식 지시사항]
 아래 항목을 각 제목으로 구분하여 작성하고, 모든 항목은 한두 문장이 아니라 상세하고 설득력 있게 설명하세요.
 
@@ -43,5 +48,6 @@ export function getProCouplePrompt(
 10. 현실적인 연애/결혼 조언 및 유의사항
 
 결과는 마치 전문가가 상담해주는 것처럼 진정성 있고 논리적인 톤으로 작성하세요.
-  `.trim()
+`}
+`.trim()
 }
