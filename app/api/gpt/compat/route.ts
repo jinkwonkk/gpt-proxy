@@ -5,7 +5,6 @@ import type { PersonInfo, SajuResult } from '@/types/saju'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// CORS 설정
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest) {
     const sajuData: { self: SajuResult; partner: SajuResult } = body.sajuData
 
     if (!selfInfo || !partnerInfo || !sajuData) {
-      return new NextResponse(JSON.stringify({ error: 'Missing required data' }), {
+      return new NextResponse(JSON.stringify({ error: '필수 정보 누락' }), {
         status: 400,
         headers: {
           ...corsHeaders(),
@@ -43,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData)
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,21 +55,29 @@ export async function POST(req: NextRequest) {
         top_p: 1,
         frequency_penalty: 0.2,
         presence_penalty: 0.2,
-        stream: false,
-      }),
+        stream: true
+      })
     })
 
-    const result = await response.json()
+    if (!openaiRes.ok || !openaiRes.body) {
+      throw new Error('OpenAI 응답 실패')
+    }
 
-    return new NextResponse(JSON.stringify(result), {
+    const stream = openaiRes.body
+
+    return new Response(stream, {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Transfer-Encoding': 'chunked',
+      }
     })
-  } catch (error: any) {
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+  } catch (err: any) {
+    console.error('❌ GPT 호출 오류:', err)
+    return new NextResponse(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: {
         ...corsHeaders(),
