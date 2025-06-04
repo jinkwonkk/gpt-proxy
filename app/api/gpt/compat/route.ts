@@ -5,6 +5,7 @@ import type { PersonInfo, SajuResult } from '@/types/saju'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+// CORS 설정
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     const selfInfo: PersonInfo = body.selfInfo
     const partnerInfo: PersonInfo = body.partnerInfo
     const sajuData: { self: SajuResult; partner: SajuResult } = body.sajuData
-    const sectionPrompt: string | undefined = body.sectionPrompt  // ✅ 프론트에서 전달받은 프롬프트 구간
+    const extraPrompt: string | undefined = body.extraPrompt // ✅ 이름 통일됨
 
     if (!selfInfo || !partnerInfo || !sajuData) {
       return new NextResponse(JSON.stringify({ error: '필수 정보 누락' }), {
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, sectionPrompt)
+    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, extraPrompt)
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
