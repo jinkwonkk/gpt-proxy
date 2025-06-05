@@ -14,20 +14,20 @@ export function getProCouplePrompt(
 - 상대: ${partnerInfo.name} (${partnerInfo.gender}) / 생년월일: ${partnerInfo.birth.year}-${partnerInfo.birth.month}-${partnerInfo.birth.day} ${partnerInfo.birth.hour !== undefined ? `(${partnerInfo.birth.hour}시)` : ''}
 
 [본인 사주]
-- 간지: ${sajuData.self.yearGanji} / ${sajuData.self.monthGanji} / ${sajuData.self.dayGanji} / ${sajuData.self.hourGanji}
-- 성격: ${sajuData.self.dayStemDesc}
-- 오행분포: ${sajuData.self.elementSummary}
-- 강한 오행: ${sajuData.self.strongElement}
-- 부족한 오행: ${sajuData.self.weakElement}
-- 일지(배우자 자리): ${sajuData.self.spouseHint}
+- 간지: ${sajuData.self.yearGanji || '정보없음'} / ${sajuData.self.monthGanji || '정보없음'} / ${sajuData.self.dayGanji || '정보없음'} / ${sajuData.self.hourGanji || '정보없음'}
+- 성격: ${sajuData.self.dayStemDesc || '정보없음'}
+- 오행분포: ${sajuData.self.elementSummary || '정보없음'}
+- 강한 오행: ${sajuData.self.strongElement || '정보없음'}
+- 부족한 오행: ${sajuData.self.weakElement || '정보없음'}
+- 일지(배우자 자리): ${sajuData.self.spouseHint || '정보없음'}
 
 [상대 사주]
-- 간지: ${sajuData.partner.yearGanji} / ${sajuData.partner.monthGanji} / ${sajuData.partner.dayGanji} / ${sajuData.partner.hourGanji}
-- 성격: ${sajuData.partner.dayStemDesc}
-- 오행분포: ${sajuData.partner.elementSummary}
-- 강한 오행: ${sajuData.partner.strongElement}
-- 부족한 오행: ${sajuData.partner.weakElement}
-- 일지(배우자 자리): ${sajuData.partner.spouseHint}
+- 간지: ${sajuData.partner.yearGanji || '정보없음'} / ${sajuData.partner.monthGanji || '정보없음'} / ${sajuData.partner.dayGanji || '정보없음'} / ${sajuData.partner.hourGanji || '정보없음'}
+- 성격: ${sajuData.partner.dayStemDesc || '정보없음'}
+- 오행분포: ${sajuData.partner.elementSummary || '정보없음'}
+- 강한 오행: ${sajuData.partner.strongElement || '정보없음'}
+- 부족한 오행: ${sajuData.partner.weakElement || '정보없음'}
+- 일지(배우자 자리): ${sajuData.partner.spouseHint || '정보없음'}
 
 [작성 방식 지시사항]
 ${extraPrompt?.trim() || ''}

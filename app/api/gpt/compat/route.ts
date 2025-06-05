@@ -5,7 +5,6 @@ import type { PersonInfo, SajuResult } from '@/types/saju'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// CORS 설정
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -27,29 +26,18 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-
     const selfInfo: PersonInfo = body.selfInfo
     const partnerInfo: PersonInfo = body.partnerInfo
     const sajuData: { self: SajuResult; partner: SajuResult } = body.sajuData
-    const extraPrompt: string | undefined = body.extraPrompt // ✅ 이름 통일됨
+    const sectionPrompt: string = body.sectionPrompt
 
-    if (!selfInfo || !partnerInfo || !sajuData) {
-      return new NextResponse(JSON.stringify({ error: '필수 정보 누락' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
-    }
-
-    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, extraPrompt)
+    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, sectionPrompt)
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'gpt-4',
@@ -62,22 +50,19 @@ export async function POST(req: NextRequest) {
       }),
     })
 
-    if (!openaiRes.ok || !openaiRes.body) {
-      throw new Error('OpenAI 응답 실패')
-    }
+    if (!openaiRes.ok || !openaiRes.body) throw new Error('OpenAI 응답 실패')
 
     return new Response(openaiRes.body, {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'text/plain; charset=utf-8',
+        'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Transfer-Encoding': 'chunked',
       },
     })
   } catch (err: any) {
-    console.error('❌ GPT 호출 오류:', err)
     return new NextResponse(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: {
