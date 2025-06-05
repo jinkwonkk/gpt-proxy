@@ -7,11 +7,11 @@ export function getProCouplePrompt(
   extraPrompt?: string
 ): string {
   return `
-당신은 사주 분석 전문가입니다. 다음 두 사람의 사주 명식을 바탕으로 궁합을 매우 상세하고 전문적으로 분석한 리포트를 작성해주세요. 각 항목은 실제 전문가가 설명하듯 논리적 근거와 함께 서술하며, 돈을 낸 고객이 만족할 만큼의 품질을 갖춰야 합니다.
+당신은 사주 분석 전문가입니다. 다음 두 사람의 사주 명식을 바탕으로 궁합을 매우 상세하고 전문적으로 분석한 리포트를 작성해주세요. 각 항목은 실제 전문가가 설명하듯 논리적 근거와 함께 서술하며, 돈을 낸 고객이 만족할 만큼의 품질을 갖춰야 합니다. 정보가 다소 누락된 경우에도 추론 가능한 범위에서 성실히 분석해주세요.
 
 [분석 대상]
-- 본인: ${selfInfo.name} (${selfInfo.gender}) / 생년월일: ${selfInfo.birth.year}-${selfInfo.birth.month}-${selfInfo.birth.day} ${selfInfo.birth.hour !== undefined ? `(${selfInfo.birth.hour}시)` : ''}
-- 상대: ${partnerInfo.name} (${partnerInfo.gender}) / 생년월일: ${partnerInfo.birth.year}-${partnerInfo.birth.month}-${partnerInfo.birth.day} ${partnerInfo.birth.hour !== undefined ? `(${partnerInfo.birth.hour}시)` : ''}
+- 본인: ${selfInfo.name || '정보없음'} (${selfInfo.gender || '정보없음'}) / 생년월일: ${selfInfo.birth.year}-${selfInfo.birth.month}-${selfInfo.birth.day} ${selfInfo.birth.hour !== undefined ? `(${selfInfo.birth.hour}시)` : '(시 정보 없음)'}
+- 상대: ${partnerInfo.name || '정보없음'} (${partnerInfo.gender || '정보없음'}) / 생년월일: ${partnerInfo.birth.year}-${partnerInfo.birth.month}-${partnerInfo.birth.day} ${partnerInfo.birth.hour !== undefined ? `(${partnerInfo.birth.hour}시)` : '(시 정보 없음)'}
 
 [본인 사주]
 - 간지: ${sajuData.self.yearGanji || '정보없음'} / ${sajuData.self.monthGanji || '정보없음'} / ${sajuData.self.dayGanji || '정보없음'} / ${sajuData.self.hourGanji || '정보없음'}

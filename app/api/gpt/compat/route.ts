@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Transfer-Encoding': 'chunked',
