@@ -9,23 +9,8 @@ type PromptInput = {
   selectedItems: string[]
 }
 
-export function getSajuPrompt({
-  userName,
-  gender,
-  birth,
-  saju,
-  question,
-  selectedItems
-}: PromptInput): string {
-  const baseInfo = `
-이름: ${userName}
-성별: ${gender}
-생년월일: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? 0}시
-사주 명식: ${JSON.stringify(saju)}
-`
-
-  const promptMap: Record<string, string> = {
-    '직업운': `■ 직업운 보고서
+const promptMap: Record<string, string> = {
+  '직업운': `■ 직업운 보고서
 1. 현재 사주에서 드러나는 직업적 성향과 강점
 2. 사주상 나에게 어울리는 직업 유형 (예: 창의적, 안정적, 리더형 등)
 3. 현재 또는 가까운 미래에 진로 변경 가능성
@@ -35,7 +20,7 @@ export function getSajuPrompt({
 7. 올해 또는 향후 2~3년간 직업운 흐름 (좋은 시기/위험 시기)
 8. 사주에서 나타나는 직업적 소명 혹은 재능 포인트`,
 
-    '재물운 / 금전운': `■ 재물운·금전운 보고서
+  '재물운 / 금전운': `■ 재물운·금전운 보고서
 1. 사주에서 드러나는 돈에 대한 태도와 금전 운세 흐름
 2. 재물복의 유무 및 시기
 3. 돈이 들어오는 경로 (근로소득, 사업, 투자 등)
@@ -45,7 +30,7 @@ export function getSajuPrompt({
 7. 올해 또는 가까운 시기의 재물운과 기회
 8. 금전과 관련된 중요한 의사결정 시 주의사항`,
 
-    '연애운 / 사랑운': `■ 연애운 보고서
+  '연애운 / 사랑운': `■ 연애운 보고서
 1. 현재 연애 기운
 2. 새로운 인연 가능 시기
 3. 사주상 나의 연애 스타일
@@ -54,7 +39,7 @@ export function getSajuPrompt({
 6. 감정 소통법 및 다툼 예방법
 7. 올해 최적 연애 타이밍 조언`,
 
-    '건강운': `■ 건강운 보고서
+  '건강운': `■ 건강운 보고서
 1. 사주에서 드러나는 건강 체질 및 취약 부위
 2. 만성질환 또는 반복되는 질병의 가능성
 3. 특정 시기에 건강상 주의해야 할 부분
@@ -64,7 +49,7 @@ export function getSajuPrompt({
 7. 병원 진료나 수술 등 필요한 결정 시기
 8. 건강 유지 및 증진을 위한 실질적인 행동 지침`,
 
-    '결혼운': `■ 결혼운 보고서
+ '결혼운': `■ 결혼운 보고서
 1. 사주에서 나타나는 결혼 성향과 결혼에 대한 태도
 2. 결혼 적령기 및 실제 결혼 가능 시기
 3. 결혼 생활에서의 강점과 약점
@@ -183,7 +168,23 @@ export function getSajuPrompt({
 6. 가족 내에서 갈등이 발생하기 쉬운 원인
 7. 사주상 가족 간 화합을 위한 조언
 8. 향후 가족운의 변화 흐름 및 유의점`,
-  }
+  // ... (다른 항목들도 같은 형식으로 추가)
+}
+
+export function getSajuPrompt({
+  userName,
+  gender,
+  birth,
+  saju,
+  question,
+  selectedItems
+}: PromptInput): string {
+  const baseInfo = `
+이름: ${userName}
+성별: ${gender}
+생년월일: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? 0}시
+사주 명식: ${JSON.stringify(saju)}
+  `
 
   const aliasMap: Record<string, string> = {
     '연애운': '연애운 / 사랑운',
@@ -202,23 +203,39 @@ export function getSajuPrompt({
   }
 
   const resolvedItems = selectedItems.map(item => aliasMap[item] || item)
+
   const selectedPrompts = resolvedItems
     .filter(item => !!promptMap[item])
     .map(item => promptMap[item])
     .join('\n\n')
 
-  const finalPrompt = `
-🔮 아래는 사용자의 사주 정보입니다.
+  const baseOnlyPrompt = `
+\ud83d\udd2e 아래는 사용자의 사주 정보입니다.
 
 ${baseInfo}
 
 ---
 
-🧾 사용자가 선택한 해석 항목에 대해 각 항목별로 아래와 같이 정리해 주세요:
+\ud83e\uddee 아래는 기본 사주 리포트입니다.
+당신은 사주 분석 전문가입니다. 제공된 사주 명식을 바탕으로 사주팔자를 매우 상세하고 전문적으로 분석한 리포트를 작성해주세요. 실제 전문가가 설명하듯 논리적 근거와 함께 서술하며, 돈을 낸 고객이 만족할 만큼의 품질을 갖춰야 합니다.
+
+명확한 정보가 부족하더라도, 현재 제공된 사주 명식 기반으로 최선을 다해 분석하세요. 
+\u2757 '정보 부족' 또는 '알 수 없다'는 표현은 절대 사용하지 마세요.
+`
+
+  const finalPrompt =
+    selectedItems.length === 0
+      ? baseOnlyPrompt
+      : `
+\ud83d\udd2e 아래는 사용자의 사주 정보입니다.
+
+${baseInfo}
+
+---
+
+\ud83e\uddee 사용자가 선택한 해석 항목에 대해 각 항목별로 아래와 같이 보고서 혹은 리포트 형식으로 정리해 주세요:
 
 ${selectedPrompts}
-
-${question ? `\n📝 추가 질문: ${question}` : ''}
 `
 
   return finalPrompt.trim()
