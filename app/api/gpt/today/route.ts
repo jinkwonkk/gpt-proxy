@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getProTodayPrompt } from '@/utils/getProTodayPrompt'
 import type { TodayInfo } from '@/types/saju'
 
-export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 function corsHeaders() {
   return {
@@ -14,7 +14,7 @@ function corsHeaders() {
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
+  return new Response(null, {
     status: 204,
     headers: {
       ...corsHeaders(),
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { info, sajuData } = await req.json()
 
     if (!info || !sajuData) {
-      return new NextResponse(JSON.stringify({ error: 'Missing required data' }), {
+      return new Response(JSON.stringify({ error: 'Missing required data' }), {
         status: 400,
         headers: {
           ...corsHeaders(),
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`,
       },
       body: JSON.stringify({
         model: 'gpt-4',
@@ -53,21 +53,70 @@ export async function POST(req: NextRequest) {
         top_p: 1,
         frequency_penalty: 0.2,
         presence_penalty: 0.2,
-        stream: false,
-      })
+        stream: true,
+      }),
     })
 
-    const result = await response.json()
+    if (!response.body) {
+      return new Response(JSON.stringify({ error: 'No response body' }), {
+        status: 500,
+        headers: {
+          ...corsHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
+    }
 
-    return new NextResponse(JSON.stringify(result), {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
+
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed.startsWith('data:')) continue
+            const jsonStr = trimmed.replace(/^data:\s*/, '')
+            if (jsonStr === '[DONE]') {
+              controller.close()
+              return
+            }
+
+            try {
+              const parsed = JSON.parse(jsonStr)
+              const content = parsed.choices?.[0]?.delta?.content
+              if (content) {
+                controller.enqueue(encoder.encode(content))
+              }
+            } catch (e) {
+              console.warn('JSON 파싱 오류:', jsonStr)
+            }
+          }
+        }
+
+        controller.close()
+      },
+    })
+
+    return new Response(stream, {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
       },
     })
   } catch (error: any) {
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
         ...corsHeaders(),

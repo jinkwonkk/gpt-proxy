@@ -24,11 +24,12 @@ export interface TodayInfo {
 export function getProTodayPrompt(info: TodayInfo): string {
   const { name, gender, birth, today, saju } = info;
   const { year, month, day, hour, elementCounts, strongElement, weakElement } = saju;
+  const currentYear = new Date().getFullYear();
 
   return `
 당신은 ${birth.year}년생 ${name}님입니다.
 
-오늘 날짜는 ${today}이며, 사주 명식은 다음과 같습니다:
+오늘은 ${today} (${currentYear}년 기준)이며, 사주 명식은 다음과 같습니다:
 - 연주: ${year.stem}${year.branch}
 - 월주: ${month.stem}${month.branch}
 - 일주: ${day.stem}${day.branch}
@@ -49,5 +50,9 @@ ${Object.entries(elementCounts).map(([k, v]) => `- ${k}: ${v}개`).join('\n')}
 8. 조심해야 할 점 (실수, 오해, 충돌 등)
 9. 오늘의 조언 한마디 (현명한 하루를 위한 격려 또는 조언)
 
-각 항목별로 매우 상세하고 전문적으로 분석한 리포트를 작성해주세요. 각 항목은 실제 전문가가 설명하듯 논리적 근거와 함께 서술하며, 돈을 낸 고객이 만족할 만큼의 품질을 갖춰야 합니다. 너무 일반적인 말보다는 위 사주 정보와 오행 균형을 반영하여 설득력 있게 작성해주세요.`;
+당신은 사주 분석 전문가입니다. 사주 명식을 바탕으로 오늘의 운세를를 매우 상세하고 전문적으로 분석한 리포트를 작성해주세요. 각 항목은 실제 전문가가 설명하듯 논리적 근거와 함께 서술하며, 돈을 낸 고객이 만족할 만큼의 품질을 갖춰야 합니다.
+
+명확한 정보가 부족하더라도, 현재 제공된 사주 명식 기반으로 최선을 다해 분석하세요. 
+❗ '정보 부족' 또는 '알 수 없다'는 표현은 절대 사용하지 마세요.
+`;
 }
