@@ -25,16 +25,39 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { info, sajuData } = await req.json()
+    const body = await req.json()
+    console.log('[POST /today] 요청 body:', JSON.stringify(body, null, 2))
 
-    if (!info || !sajuData) {
-      return new Response(JSON.stringify({ error: 'Missing required data' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
+    const { info, sajuData } = body
+
+    // 필수 정보 누락 검사
+    if (
+      !info?.name ||
+      !info?.gender ||
+      !info?.birth?.year ||
+      !info?.birth?.month ||
+      !info?.birth?.day ||
+      typeof info?.birth?.hour !== 'number' ||
+      !sajuData?.year ||
+      !sajuData?.month ||
+      !sajuData?.day ||
+      !sajuData?.hour ||
+      !sajuData?.elementCounts ||
+      !sajuData?.strongElement ||
+      !sajuData?.weakElement
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: '필수 데이터 누락: info 또는 sajuData의 일부 필드가 존재하지 않습니다.',
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders(),
+            'Content-Type': 'application/json',
+          },
+        }
+      )
     }
 
     const fullInfo: TodayInfo = { ...info, saju: sajuData }
@@ -58,7 +81,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!response.body) {
-      return new Response(JSON.stringify({ error: 'No response body' }), {
+      return new Response(JSON.stringify({ error: 'OpenAI 응답 body가 없습니다.' }), {
         status: 500,
         headers: {
           ...corsHeaders(),
@@ -116,6 +139,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: any) {
+    console.error('[POST /today] 서버 오류:', error.message)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
