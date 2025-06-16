@@ -1,4 +1,4 @@
-// /api/gpt/saju
+// /api/gpt/saju/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { getSajuPrompt } from '@/utils/getSajuPrompt'
 
@@ -30,8 +30,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userName, gender, birth, saju, question, selectedItems } = body
 
-    // hour 없이도 통과하도록 조건 수정
-    if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saju || !selectedItems) {
+    // ✅ 필수값 점검 (hour는 선택값으로 허용)
+    if (
+      !userName ||
+      !gender ||
+      !birth?.year ||
+      !birth?.month ||
+      !birth?.day ||
+      !saju ||
+      !Array.isArray(selectedItems)
+    ) {
       return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
         status: 400,
         headers: {
@@ -44,7 +52,7 @@ export async function POST(req: NextRequest) {
     const prompt = getSajuPrompt({
       userName,
       gender,
-      birth,
+      birth, // hour가 없어도 내부에서 처리 가능
       saju,
       question,
       selectedItems
@@ -71,9 +79,7 @@ export async function POST(req: NextRequest) {
       throw new Error('OpenAI 응답 오류 또는 body 없음')
     }
 
-    const stream = openaiResponse.body
-
-    return new Response(stream, {
+    return new Response(openaiResponse.body, {
       status: 200,
       headers: {
         ...corsHeaders(),
