@@ -1,3 +1,4 @@
+// /api/gpt/saju
 import { NextRequest, NextResponse } from 'next/server'
 import { getSajuPrompt } from '@/utils/getSajuPrompt'
 
@@ -29,7 +30,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userName, gender, birth, saju, question, selectedItems } = body
 
-    if (!userName || !gender || !birth || !saju || !selectedItems) {
+    // hour 없이도 통과하도록 조건 수정
+    if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saju || !selectedItems) {
       return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
         status: 400,
         headers: {
