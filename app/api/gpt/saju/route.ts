@@ -30,24 +30,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userName, gender, birth, saju, question, selectedItems } = body
 
-    // ✅ 필수값 점검 (hour는 선택값으로 허용)
-    if (
-      !userName ||
-      !gender ||
-      !birth?.year ||
-      !birth?.month ||
-      !birth?.day ||
-      !saju ||
-      !Array.isArray(selectedItems)
-    ) {
-      return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
-    }
+if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saju || !Array.isArray(selectedItems)) {
+  return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
+    status: 400,
+    headers: {
+      ...corsHeaders(),
+      'Content-Type': 'application/json',
+    },
+  })
+}
+
 
     const prompt = getSajuPrompt({
       userName,
