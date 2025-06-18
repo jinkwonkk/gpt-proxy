@@ -59,11 +59,18 @@ export function getItemSajuPrompt(input: PromptInput): string {
   if (!item) return ''
 
   const resolved = promptAliasMap[item] || item
-  const lang: 'ko' | 'en' | 'ja' | 'es' = input.lang ?? 'ko' // 🔒 타입 보장
+  const lang: 'ko' | 'en' | 'ja' | 'es' = input.lang ?? 'ko'
+
+  if (!(resolved in promptTexts)) {
+    console.warn(`🚫 프롬프트 항목 '${resolved}'이 promptTexts에 존재하지 않습니다.`)
+    return ''
+  }
 
   const report = promptTexts[resolved]?.[lang]
-  if (!report) return ''
-
+  if (!report) {
+    console.warn(`⚠️ 언어 '${lang}'에 대한 '${resolved}' 프롬프트가 존재하지 않습니다.`)
+    return ''
+  }
 
   return `
 🔮 아래는 사용자의 사주 정보입니다.
