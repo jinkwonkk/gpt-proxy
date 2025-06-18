@@ -1,6 +1,5 @@
-// /api/gpt/saju/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getSajuPrompt } from '@/utils/getSajuPrompt'
+import { getBaseSajuPrompt, getItemSajuPrompt } from '@/utils/getSajuPrompt'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -25,46 +24,55 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("✅ POST /api/gpt/saju 호출됨")
+    console.log('✅ POST /api/gpt/saju 호출됨')
 
     const body = await req.json()
-    const { userName, gender, birth, saju, question, selectedItems } = body
+    const { userName, gender, birth, saju, selectedItems } = body
 
-if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saju || !Array.isArray(selectedItems)) {
-  return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
-    status: 400,
-    headers: {
-      ...corsHeaders(),
-      'Content-Type': 'application/json',
-    },
-  })
-}
+    // ✅ 필수값 점검
+    if (
+      !userName ||
+      !gender ||
+      !birth?.year ||
+      !birth?.month ||
+      !birth?.day ||
+      !saju ||
+      !Array.isArray(selectedItems)
+    ) {
+      return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
+        status: 400,
+        headers: {
+          ...corsHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
+    }
 
+    // ✅ 기본 해석 포함
+    const basePrompt = getBaseSajuPrompt({ userName, gender, birth, saju })
 
-    const prompt = getSajuPrompt({
-      userName,
-      gender,
-      birth, // hour가 없어도 내부에서 처리 가능
-      saju,
-      question,
-      selectedItems
-    })
+    // ✅ 선택 항목들 처리
+    const itemPrompts = selectedItems.map((item) =>
+      getItemSajuPrompt({ userName, gender, birth, saju, item })
+    )
+
+    const fullPrompt = [basePrompt, ...itemPrompts].join('\n\n')
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: 'user', content: fullPrompt }],
         temperature: 0.7,
         top_p: 1,
         frequency_penalty: 0.2,
         presence_penalty: 0.2,
-        stream: true
-      })
+        stream: true,
+      }),
     })
 
     if (!openaiResponse.ok || !openaiResponse.body) {
@@ -79,7 +87,7 @@ if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saj
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Transfer-Encoding': 'chunked',
-      }
+      },
     })
   } catch (error: any) {
     console.error('❌ 서버 오류:', error)
@@ -87,8 +95,8 @@ if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saj
       status: 500,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     })
   }
 }
