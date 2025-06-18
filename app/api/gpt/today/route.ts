@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     const fullInfo: TodayInfo = { ...info, saju: sajuData }
-    const prompt = getProTodayPrompt(fullInfo)
+    const prompt = getProTodayPrompt({ ...info, saju: sajuData, lang: info.lang })
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
