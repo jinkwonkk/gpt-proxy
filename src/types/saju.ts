@@ -32,7 +32,8 @@ export interface TodayInfo {
     day: number;
     hour?: number;
   };
-  today: string;
+  today: string; // YYYY-MM-DD 형식의 날짜 문자열
+  lang?: 'ko' | 'en' | 'ja' | 'es'; // ✅ 추가
   saju: {
     year: { stem: string; branch: string };
     month: { stem: string; branch: string };
