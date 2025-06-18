@@ -27,9 +27,16 @@ export async function POST(req: NextRequest) {
     console.log('✅ POST /api/gpt/saju 호출됨')
 
     const body = await req.json()
-    const { userName, gender, birth, saju, selectedItems } = body
+    const {
+      userName,
+      gender,
+      birth,
+      saju,
+      selectedItems,
+      lang = 'ko', // ✅ 기본값 설정
+    } = body
 
-    // ✅ 필수값 점검
+    // ✅ 필수값 검증
     if (
       !userName ||
       !gender ||
@@ -48,16 +55,16 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ✅ 기본 해석 포함
-    const basePrompt = getBaseSajuPrompt({ userName, gender, birth, saju })
+    // ✅ 프롬프트 구성
+    const basePrompt = getBaseSajuPrompt({ userName, gender, birth, saju, lang })
 
-    // ✅ 선택 항목들 처리
     const itemPrompts = selectedItems.map((item) =>
-      getItemSajuPrompt({ userName, gender, birth, saju, item })
+      getItemSajuPrompt({ userName, gender, birth, saju, item, lang })
     )
 
     const fullPrompt = [basePrompt, ...itemPrompts].join('\n\n')
 
+    // ✅ OpenAI API 요청
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
