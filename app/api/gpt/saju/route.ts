@@ -44,13 +44,20 @@ export async function POST(req: NextRequest) {
     let prompt = ''
 
     if (selectedItems.length === 0) {
-      // ✅ 기본 해석만 요청된 경우
+      // 기본 해석만 요청된 경우
       prompt = getBaseSajuPrompt({ userName, gender, birth, saju, lang })
     } else if (selectedItems.length === 1) {
-      // ✅ 개별 항목 해석 요청
-      prompt = getItemSajuPrompt({ userName, gender, birth, saju, item: selectedItems[0], lang })
+      // 단일 항목 요청
+      prompt = getItemSajuPrompt({
+        userName,
+        gender,
+        birth,
+        saju,
+        item: selectedItems[0],
+        lang,
+      })
     } else {
-      // ❌ 여러 개 항목을 동시에 보낸 경우 (프론트에서 분리 호출되므로 에러 처리)
+      // 여러 항목 동시 요청은 허용하지 않음
       return new NextResponse(JSON.stringify({ error: '항목은 한 번에 하나만 요청해야 합니다.' }), {
         status: 400,
         headers: {
