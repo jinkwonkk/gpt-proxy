@@ -1,16 +1,14 @@
 import { promptAliasMap, promptTexts } from '../i18n/promptLabels'
 
-// ✅ 타입 정의
 export type PromptInput = {
   userName: string
   gender: string
   birth: { year: number; month: number; day: number; hour?: number }
   saju: any
-  item?: string // 선택 항목별 호출 시 사용
-  lang?: 'ko' | 'en' | 'ja' | 'es' // ✅ 다국어 지원
+  item?: string
+  lang?: 'ko' | 'en' | 'ja' | 'es'
 }
 
-// ✅ 기본 프롬프트 다국어 버전
 const basePromptTexts: Record<'ko' | 'en' | 'ja' | 'es', string> = {
   ko: `
 📌 기본 사주 리포트 (전문가 작성)
@@ -81,61 +79,24 @@ Eres el mejor analista de saju de Corea. Basándote en la carta natal que aparec
 `.trim(),
 }
 
-// ✅ 사주 기본 정보 문자열
 function getBaseInfo(input: PromptInput) {
   const { userName, gender, birth, saju } = input
   const currentYear = new Date().getFullYear()
-  return `
-📅 Year: ${currentYear}
-Name: ${userName}
-Gender: ${gender}
-Birth: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? 'Unknown time'}
-Saju Chart: ${JSON.stringify(saju)}
-  `.trim()
+  return `📅 Year: ${currentYear}\nName: ${userName}\nGender: ${gender}\nBirth: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? 'Unknown'}\nSaju Chart: ${JSON.stringify(saju)}`
 }
 
-// ✅ 기본 사주 리포트
 export function getBaseSajuPrompt(input: PromptInput): string {
-  const lang: 'ko' | 'en' | 'ja' | 'es' = input.lang ?? 'ko'
+  const lang = input.lang ?? 'ko'
   const instruction = basePromptTexts[lang]
-
-  return `
-🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}
-
-${getBaseInfo(input)}
-
----
-
-${instruction}
-  `.trim()
+  return `🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}\n\n${getBaseInfo(input)}\n\n---\n\n${instruction}`
 }
 
-// ✅ 선택 항목 리포트
 export function getItemSajuPrompt(input: PromptInput): string {
   const { item } = input
   if (!item) return ''
-
   const resolved = promptAliasMap[item] || item
-  const lang: 'ko' | 'en' | 'ja' | 'es' = input.lang ?? 'ko'
-
-  if (!(resolved in promptTexts)) {
-    console.warn(`🚫 프롬프트 항목 '${resolved}'이 promptTexts에 존재하지 않습니다.`)
-    return ''
-  }
-
+  const lang = input.lang ?? 'ko'
   const report = promptTexts[resolved]?.[lang]
-  if (!report) {
-    console.warn(`⚠️ 언어 '${lang}'에 대한 '${resolved}' 프롬프트가 존재하지 않습니다.`)
-    return ''
-  }
-
-  return `
-🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}
-
-${getBaseInfo(input)}
-
----
-
-${report}
-  `.trim()
+  if (!report) return ''
+  return `🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}\n\n${getBaseInfo(input)}\n\n---\n\n${report}`
 }
