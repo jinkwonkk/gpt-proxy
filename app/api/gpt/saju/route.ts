@@ -85,7 +85,6 @@ export async function POST(req: NextRequest) {
       throw new Error('OpenAI 응답 오류 또는 body 없음')
     }
 
-    // ✅ TransformStream으로 중간 chunk를 바로바로 flush
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
     const reader = openaiResponse.body.getReader()
@@ -102,7 +101,7 @@ export async function POST(req: NextRequest) {
       writer.close()
     }
 
-    pump()
+    await pump() // ✅ 반드시 기다려야 함
 
     return new Response(readable, {
       status: 200,
