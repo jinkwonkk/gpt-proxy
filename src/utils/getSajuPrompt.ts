@@ -13,71 +13,72 @@ const basePromptTexts: Record<'ko' | 'en' | 'ja' | 'es', string> = {
   ko: `
 📌 기본 사주 리포트 (전문가 작성)
 
-당신은 대한민국 최고의 사주 분석 전문가입니다. 아래 사주 명식을 바탕으로 고객의 전체적인 사주팔자를 다음 항목에 따라 논리적으로 분석한 리포트를 작성해주세요. 문단마다 제목을 붙이고, 각 해석은 실제 상담 리포트처럼 자세하고 이해하기 쉽게 구성하세요. 돈을 지불한 고객이 충분히 만족할 수 있어야 합니다.
+당신은 국내 최고 수준의 사주 전문가입니다. 아래 제공된 사주 명식을 기반으로, 실제 유료 상담을 받는 고객에게 제공하는 것처럼 신뢰도 높고 설득력 있는 해석을 작성해주세요. 단순한 요약이 아니라 구체적인 사례, 사주 구조에 대한 논리적 해석, 고객이 공감할 수 있는 조언을 포함해야 합니다.
 
-❗ 반드시 포함해야 할 항목:
-1. 전체적인 인생 기운의 흐름 요약
-2. 성격 및 기본 성향 분석 (일간 중심)
-3. 오행 분포 해석 및 강/약한 요소
-4. 인생의 주요 전환점 시기
-5. 사주의 강점과 약점
-6. 주의할 시기 또는 반복되는 패턴
-7. 고객에게 꼭 필요한 조언
+📍 리포트 구성 (각 항목은 소제목 포함, 문단으로 서술):
+1. 전체적인 인생 흐름 개요 — 이 사람의 인생 기조, 주된 방향성, 반복되는 패턴
+2. 성격 및 성향 분석 — 일간을 중심으로 한 기질, 사고방식, 대인관계 스타일
+3. 오행 분포 해석 — 강한 오행, 약한 오행의 의미와 삶에 미치는 영향
+4. 주요 전환점 시기 — 대운 흐름 및 사주의 구조상 주목해야 할 시기들
+5. 타고난 강점과 취약점 — 인생에서 활용해야 할 장점과 유의할 부분
+6. 주의할 패턴 및 위험 요소 — 반복되는 실수, 충돌, 건강 이슈 등
+7. 전문가 조언 — 사주 구조에 기반한 실질적 조언 및 방향 제시
 
-❗ '정보 부족', '알 수 없음' 같은 말은 절대 하지 마세요. 사주 명식을 최대한 활용해 유의미한 해석을 해주세요.
+❗ 아래 금지 문구 사용 금지: '정보 부족', '판단 불가', '모호함' 등. 반드시 주어진 사주 정보로 의미 있는 해석을 도출해주세요.
 `.trim(),
 
   en: `
-📌 Professional Saju Report (Expert Generated)
+📌 In-Depth Saju Report (Expert Level)
 
-You are Korea’s top saju interpretation expert. Based on the saju chart below, logically analyze the user's overall destiny in the format of a paid consultation report. Include clear section titles and detailed, easy-to-understand explanations.
+You are one of the most respected saju interpretation experts. Based on the user's saju chart below, create a comprehensive and well-structured report as if you were providing a high-value paid consultation. Avoid shallow summaries — instead, include logical interpretations, relatable insights, and specific examples.
 
-❗ Required Sections:
-1. Overall life energy flow
-2. Personality traits (based on the day stem)
-3. Element distribution and strengths/weaknesses
-4. Major turning points in life
-5. Strengths and weaknesses in the saju
-6. Recurring challenges or danger periods
-7. Key advice for the user
+📍 Report Structure (each with section title and paragraph explanation):
+1. Overview of Life Flow — Overall destiny patterns and direction
+2. Personality Analysis — Based on Day Stem: mindset, temperament, relationships
+3. Element Balance — Dominant and weak elements and their impact on life
+4. Major Turning Points — Key years based on luck cycle and chart structure
+5. Strengths and Weaknesses — Inborn advantages and areas to be cautious
+6. Recurring Patterns & Cautions — Risk factors, conflicts, health alerts
+7. Expert Advice — Practical suggestions based on saju analysis
 
-❗ Never say "not enough information" — use all available saju data for meaningful interpretation.
+❗ Never say "not enough info", "cannot determine", or similar. Use all available chart data to deliver meaningful insights.
 `.trim(),
 
   ja: `
-📌 基本四柱推命レポート（専門家作成）
+📌 四柱推命 詳細鑑定レポート（専門家向け）
 
-あなたは韓国最高の四柱推命専門家です。以下の命式を基に、顧客の全体的な運命を以下の項目に従って論理的に分析し、実際の鑑定レポートのようにわかりやすく詳細に構成してください。支払いをした顧客が満足できる内容にしてください。
+あなたは一流の四柱推命専門家です。以下の命式情報に基づき、実際に有料相談を受ける顧客に提供するような、高品質で信頼性のある鑑定レポートを作成してください。表面的な解釈ではなく、深みのある分析・納得感のある助言を含めてください。
 
-❗ 必須項目:
-1. 人生全体の運勢の流れ
-2. 性格・本質的な傾向（日干を中心に）
-3. 五行のバランスと強弱
-4. 人生の転換点
-5. 命式上の長所と短所
-6. 注意が必要な時期やパターン
-7. 顧客への重要なアドバイス
+📍 レポート構成（各項目にタイトルと段落を付けて説明）:
+1. 人生全体の運勢の流れ — 大まかな方向性、人生のテーマ
+2. 性格分析 — 日干を中心とした思考・行動パターン、人間関係
+3. 五行のバランス — 強い五行と弱い五行、それが与える影響
+4. 人生の転換点 — 大運や命式構造から見た重要な年
+5. 強みと弱点 — 活かすべき資質と注意点
+6. 注意すべきパターン — トラブル傾向、体調のリスクなど
+7. 専門家からの助言 — 命式に基づいた実用的なアドバイス
 
-❗「情報不足」や「あいまいな判断」とは絶対に言わず、最大限に分析してください。
+❗ 「情報不足」「不明」などの曖昧な表現は禁止。命式から得られるすべての情報を活用し、有意義な分析を行ってください。
 `.trim(),
 
   es: `
-📌 Informe Básico de Saju (Elaborado por un Experto)
+📌 Informe Detallado de Saju (Nivel Experto)
 
-Eres el mejor analista de saju de Corea. Basándote en la carta natal que aparece a continuación, analiza detalladamente la suerte general del cliente. Escribe el informe como si fuera una consulta real, con títulos claros y explicaciones comprensibles.
+Eres un experto reconocido en la interpretación del saju. Utilizando la carta natal proporcionada a continuación, crea un informe completo como si fuera para una consulta profesional pagada. No resumas superficialmente — ofrece un análisis profundo con ejemplos concretos y consejos prácticos.
 
-❗ Secciones obligatorias:
-1. Flujo general de la suerte de vida
-2. Análisis de la personalidad (basado en el tronco del día)
-3. Análisis de los elementos (fuertes/débiles)
-4. Momentos clave de cambio en la vida
-5. Fortalezas y debilidades del saju
-6. Patrones repetitivos o épocas peligrosas
-7. Consejo práctico para el cliente
+📍 Estructura del informe (cada sección debe tener un título y un párrafo explicativo):
+1. Flujo general de la vida — Temas principales y dirección del destino
+2. Análisis de personalidad — Basado en el tronco del día, forma de pensar, estilo de relaciones
+3. Análisis de elementos — Elementos fuertes y débiles y su influencia
+4. Momentos clave de cambio — Años importantes según ciclos de suerte y estructura del saju
+5. Fortalezas y debilidades — Capacidades innatas y áreas a tener cuidado
+6. Patrones repetitivos y advertencias — Problemas recurrentes, salud, conflictos
+7. Consejo del experto — Recomendaciones prácticas basadas en la carta
 
-❗ No digas “falta información”. Usa lo que haya para ofrecer un análisis significativo.
+❗ No utilices frases como "información insuficiente" o "no se puede determinar". Usa todos los datos disponibles para ofrecer un análisis significativo.
 `.trim(),
 }
+
 
 function getBaseInfo(input: PromptInput) {
   const { userName, gender, birth, saju } = input
