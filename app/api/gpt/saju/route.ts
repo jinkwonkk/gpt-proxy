@@ -44,10 +44,8 @@ export async function POST(req: NextRequest) {
     let prompt = ''
 
     if (selectedItems.length === 0) {
-      // 기본 해석만 요청된 경우
       prompt = getBaseSajuPrompt({ userName, gender, birth, saju, lang })
     } else if (selectedItems.length === 1) {
-      // 단일 항목 요청
       prompt = getItemSajuPrompt({
         userName,
         gender,
@@ -57,7 +55,6 @@ export async function POST(req: NextRequest) {
         lang,
       })
     } else {
-      // 여러 항목 동시 요청은 허용하지 않음
       return new NextResponse(JSON.stringify({ error: '항목은 한 번에 하나만 요청해야 합니다.' }), {
         status: 400,
         headers: {
@@ -88,7 +85,26 @@ export async function POST(req: NextRequest) {
       throw new Error('OpenAI 응답 오류 또는 body 없음')
     }
 
-    return new Response(openaiResponse.body, {
+    // ✅ TransformStream으로 중간 chunk를 바로바로 flush
+    const { readable, writable } = new TransformStream()
+    const writer = writable.getWriter()
+    const reader = openaiResponse.body.getReader()
+    const decoder = new TextDecoder()
+    const encoder = new TextEncoder()
+
+    const pump = async () => {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value)
+        await writer.write(encoder.encode(chunk))
+      }
+      writer.close()
+    }
+
+    pump()
+
+    return new Response(readable, {
       status: 200,
       headers: {
         ...corsHeaders(),
