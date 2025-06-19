@@ -2,7 +2,6 @@
 
 import { NextRequest } from 'next/server'
 import { getProTodayPrompt } from '@/utils/getProTodayPrompt'
-import type { TodayInfo } from '@/types/saju'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
