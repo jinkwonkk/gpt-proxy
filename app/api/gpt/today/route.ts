@@ -1,3 +1,5 @@
+// app/api/gpt/today/route.ts
+
 import { NextRequest } from 'next/server'
 import { getProTodayPrompt } from '@/utils/getProTodayPrompt'
 import type { TodayInfo } from '@/types/saju'
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     console.log('[POST /today] 요청 body:', JSON.stringify(body, null, 2))
 
-    const { info, sajuData } = body
+    const { info, sajuData, sectionIndex } = body
 
     // 필수 정보 누락 검사
     if (
@@ -38,6 +40,8 @@ export async function POST(req: NextRequest) {
       !info?.birth?.month ||
       !info?.birth?.day ||
       typeof info?.birth?.hour !== 'number' ||
+      sectionIndex === undefined ||
+      sectionIndex < 0 || sectionIndex > 8 ||
       !sajuData?.year ||
       !sajuData?.month ||
       !sajuData?.day ||
@@ -48,7 +52,7 @@ export async function POST(req: NextRequest) {
     ) {
       return new Response(
         JSON.stringify({
-          error: '필수 데이터 누락: info 또는 sajuData의 일부 필드가 존재하지 않습니다.',
+          error: '필수 데이터 누락 또는 sectionIndex 오류.',
         }),
         {
           status: 400,
@@ -60,9 +64,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const fullInfo: TodayInfo = { ...info, saju: sajuData }
     const lang = info.lang ?? 'ko'
-    const prompt = getProTodayPrompt({ ...info, saju: sajuData, lang })
+    const prompt = getProTodayPrompt({ ...info, saju: sajuData, lang }, sectionIndex)
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
