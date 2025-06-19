@@ -1,4 +1,4 @@
-import { promptAliasMap, promptTexts } from '../i18n/promptLabels'
+import { promptTexts } from '../i18n/promptLabels'
 
 export type PromptInput = {
   userName: string
@@ -79,7 +79,6 @@ Eres un experto reconocido en la interpretación del saju. Utilizando la carta n
 `.trim(),
 }
 
-
 function getBaseInfo(input: PromptInput) {
   const { userName, gender, birth, saju } = input
   const currentYear = new Date().getFullYear()
@@ -95,9 +94,8 @@ export function getBaseSajuPrompt(input: PromptInput): string {
 export function getItemSajuPrompt(input: PromptInput): string {
   const { item } = input
   if (!item) return ''
-  const resolved = promptAliasMap[item] || item
   const lang = input.lang ?? 'ko'
-  const report = promptTexts[resolved]?.[lang]
+  const report = promptTexts[item]?.[lang]
   if (!report) return ''
   return `🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}\n\n${getBaseInfo(input)}\n\n---\n\n${report}`
 }
