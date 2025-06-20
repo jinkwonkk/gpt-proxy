@@ -89,11 +89,27 @@ function getBaseInfo(input: PromptInput) {
     es: { name: 'Nombre', gender: 'Género', birth: 'Fecha de nacimiento', saju: 'Carta Saju', strong: 'Elemento fuerte', weak: 'Elemento débil' },
   }
 
+  const genderLabelMap = {
+    ko: { male: '남성', female: '여성' },
+    en: { male: 'Male', female: 'Female' },
+    ja: { male: '男性', female: '女性' },
+    es: { male: 'Hombre', female: 'Mujer' },
+  }
+
+  const elementNameMap = {
+    ko: { 목: '목', 화: '화', 토: '토', 금: '금', 수: '수' },
+    en: { 목: 'Wood', 화: 'Fire', 토: 'Earth', 금: 'Metal', 수: 'Water' },
+    ja: { 목: '木', 화: '火', 토: '土', 금: '金', 수: '水' },
+    es: { 목: 'Madera', 화: 'Fuego', 토: 'Tierra', 금: 'Metal', 수: 'Agua' },
+  }
+
   const label = labelMap[lang]
+  const genderText = genderLabelMap[lang][gender as 'male' | 'female']
+  const elementText = elementNameMap[lang]
 
   return `
 🧾 ${label.name}: ${userName}
-🧍 ${label.gender}: ${gender}
+🧍 ${label.gender}: ${genderText}
 🎂 ${label.birth}: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? '모름'}
 
 🌿 ${label.saju}:
@@ -103,11 +119,11 @@ function getBaseInfo(input: PromptInput) {
 - 시: ${saju.hour?.stem ?? '-'}${saju.hour?.branch ?? '-'}
 
 🔮 Element Count:
-- 목(Wood): ${saju.elementCounts['목'] ?? 0}
-- 화(Fire): ${saju.elementCounts['화'] ?? 0}
-- 토(Earth): ${saju.elementCounts['토'] ?? 0}
-- 금(Metal): ${saju.elementCounts['금'] ?? 0}
-- 수(Water): ${saju.elementCounts['수'] ?? 0}
+- ${elementText.목}: ${saju.elementCounts['목'] ?? 0}
+- ${elementText.화}: ${saju.elementCounts['화'] ?? 0}
+- ${elementText.토}: ${saju.elementCounts['토'] ?? 0}
+- ${elementText.금}: ${saju.elementCounts['금'] ?? 0}
+- ${elementText.수}: ${saju.elementCounts['수'] ?? 0}
 
 💪 ${label.strong}: ${saju.strongElement}
 🧂 ${label.weak}: ${saju.weakElement}
@@ -127,7 +143,10 @@ export function getItemSajuPrompt(input: PromptInput): string {
   if (!item) return ''
   const lang = input.lang ?? 'ko'
   const report = promptTexts[item]?.[lang]
-  if (!report) return ''
+  if (!report) {
+  console.warn(`⚠️ 다국어 프롬프트 누락: item=${item}, lang=${lang}`)
+  return basePromptTexts[lang] // 또는 return '' 로 유지 가능
+  }
   const baseInfo = getBaseInfo(input)
   return `🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}\n\n${baseInfo}\n\n---\n\n${report}`
 }
