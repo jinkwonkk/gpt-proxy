@@ -54,6 +54,18 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // ✅ 빈 프롬프트 방지
+    if (!prompt || prompt.trim().length === 0) {
+      console.warn('⚠️ 생성된 프롬프트가 비어 있음', { selectedItems, lang })
+      return new NextResponse(JSON.stringify({ error: '프롬프트 생성 실패' }), {
+        status: 400,
+        headers: {
+          ...corsHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
+    }
+
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -72,6 +84,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!openaiResponse.ok || !openaiResponse.body) {
+      console.error('❌ OpenAI 응답 오류 또는 body 없음', openaiResponse.status)
       throw new Error(`OpenAI 응답 오류: ${openaiResponse.status}`)
     }
 
@@ -95,7 +108,8 @@ export async function POST(req: NextRequest) {
       await writer.close()
     }
 
-    await pump().catch(error => {
+    // ✅ 스트리밍 로직과 응답을 분리
+    pump().catch(error => {
       console.error('❌ 스트리밍 처리 중 오류:', error)
     })
 
