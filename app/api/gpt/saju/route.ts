@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userName, gender, birth, saju, selectedItems, lang = 'ko' } = body
 
+    // ✅ 유효성 검증
     if (
       !userName || !gender ||
       !birth?.year || !birth?.month || !birth?.day ||
@@ -40,6 +41,9 @@ export async function POST(req: NextRequest) {
         },
       })
     }
+
+    console.log('✅ OPENAI_API_KEY 존재:', !!process.env.OPENAI_API_KEY)
+    console.log('✅ selectedItems:', selectedItems)
 
     let prompt = ''
 
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
         lang,
       })
     } else {
+      console.error('❌ 항목 여러 개 요청됨 (현재 1개씩만 지원)', selectedItems)
       return new NextResponse(JSON.stringify({ error: '항목은 한 번에 하나만 요청해야 합니다.' }), {
         status: 400,
         headers: {
@@ -64,6 +69,20 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    if (!prompt || prompt.length < 10) {
+      console.error('❌ 프롬프트가 비어 있음:', prompt)
+      return new NextResponse(JSON.stringify({ error: '프롬프트 생성 실패' }), {
+        status: 500,
+        headers: {
+          ...corsHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
+    }
+
+    console.log('✅ 생성된 프롬프트 일부:', prompt.slice(0, 100) + '...')
+
+    // ✅ GPT 호출
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -82,9 +101,11 @@ export async function POST(req: NextRequest) {
     })
 
     if (!openaiResponse.ok || !openaiResponse.body) {
-      throw new Error('OpenAI 응답 오류 또는 body 없음')
+      console.error('❌ OpenAI 응답 오류:', openaiResponse.status)
+      throw new Error('OpenAI 응답 실패 또는 body 없음')
     }
 
+    // ✅ 스트리밍 처리
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
     const reader = openaiResponse.body.getReader()
@@ -101,7 +122,7 @@ export async function POST(req: NextRequest) {
       writer.close()
     }
 
-    await pump() // ✅ 반드시 기다려야 함
+    await pump()
 
     return new Response(readable, {
       status: 200,
@@ -114,6 +135,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: any) {
+    console.error('❌ 서버 내부 오류:', error.message)
     return new NextResponse(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
