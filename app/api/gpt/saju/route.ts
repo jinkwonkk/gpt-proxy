@@ -1,3 +1,5 @@
+// /api/gpt/saju/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getBaseSajuPrompt, getItemSajuPrompt } from '@/utils/getSajuPrompt'
 
@@ -27,12 +29,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { userName, gender, birth, saju, selectedItems, lang = 'ko' } = body
 
-    // ✅ 유효성 검증
-    if (
-      !userName || !gender ||
-      !birth?.year || !birth?.month || !birth?.day ||
-      !saju || !Array.isArray(selectedItems)
-    ) {
+    if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saju || !Array.isArray(selectedItems)) {
       return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
         status: 400,
         headers: {
@@ -42,24 +39,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    console.log('✅ OPENAI_API_KEY 존재:', !!process.env.OPENAI_API_KEY)
-    console.log('✅ selectedItems:', selectedItems)
-
     let prompt = ''
-
     if (selectedItems.length === 0) {
       prompt = getBaseSajuPrompt({ userName, gender, birth, saju, lang })
     } else if (selectedItems.length === 1) {
-      prompt = getItemSajuPrompt({
-        userName,
-        gender,
-        birth,
-        saju,
-        item: selectedItems[0],
-        lang,
-      })
+      prompt = getItemSajuPrompt({ userName, gender, birth, saju, item: selectedItems[0], lang })
     } else {
-      console.error('❌ 항목 여러 개 요청됨 (현재 1개씩만 지원)', selectedItems)
       return new NextResponse(JSON.stringify({ error: '항목은 한 번에 하나만 요청해야 합니다.' }), {
         status: 400,
         headers: {
@@ -69,20 +54,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    if (!prompt || prompt.length < 10) {
-      console.error('❌ 프롬프트가 비어 있음:', prompt)
-      return new NextResponse(JSON.stringify({ error: '프롬프트 생성 실패' }), {
-        status: 500,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
-    }
-
-    console.log('✅ 생성된 프롬프트 일부:', prompt.slice(0, 100) + '...')
-
-    // ✅ GPT 호출
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -101,11 +72,9 @@ export async function POST(req: NextRequest) {
     })
 
     if (!openaiResponse.ok || !openaiResponse.body) {
-      console.error('❌ OpenAI 응답 오류:', openaiResponse.status)
-      throw new Error('OpenAI 응답 실패 또는 body 없음')
+      throw new Error(`OpenAI 응답 오류: ${openaiResponse.status}`)
     }
 
-    // ✅ 스트리밍 처리
     const { readable, writable } = new TransformStream()
     const writer = writable.getWriter()
     const reader = openaiResponse.body.getReader()
@@ -116,13 +85,19 @@ export async function POST(req: NextRequest) {
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const chunk = decoder.decode(value)
-        await writer.write(encoder.encode(chunk))
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n').filter(line => line.trim() !== '')
+        for (const line of lines) {
+          await writer.write(encoder.encode(`data: ${line.trim()}\n\n`))
+        }
       }
-      writer.close()
+      await writer.write(encoder.encode('data: [DONE]\n\n'))
+      await writer.close()
     }
 
-    await pump()
+    await pump().catch(error => {
+      console.error('❌ 스트리밍 처리 중 오류:', error)
+    })
 
     return new Response(readable, {
       status: 200,
@@ -135,7 +110,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('❌ 서버 내부 오류:', error.message)
+    console.error('❌ 서버 오류:', error)
     return new NextResponse(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
