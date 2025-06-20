@@ -80,30 +80,40 @@ Eres un experto reconocido en la interpretación del saju. Utilizando la carta n
 }
 
 function getBaseInfo(input: PromptInput) {
-  const { userName, gender, birth, saju } = input
+  const { userName, gender, birth, saju, lang = 'ko' } = input
+
+  const labelMap = {
+    ko: { name: '이름', gender: '성별', birth: '생년월일', saju: '사주 구성', strong: '강한 오행', weak: '약한 오행' },
+    en: { name: 'Name', gender: 'Gender', birth: 'Birthdate', saju: 'Saju Chart', strong: 'Strong Element', weak: 'Weak Element' },
+    ja: { name: '名前', gender: '性別', birth: '生年月日', saju: '四柱構成', strong: '強い五行', weak: '弱い五行' },
+    es: { name: 'Nombre', gender: 'Género', birth: 'Fecha de nacimiento', saju: 'Carta Saju', strong: 'Elemento fuerte', weak: 'Elemento débil' },
+  }
+
+  const label = labelMap[lang]
 
   return `
-🧾 이름: ${userName}
-🧍 성별: ${gender}
-🎂 생년월일: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? '모름'}
+🧾 ${label.name}: ${userName}
+🧍 ${label.gender}: ${gender}
+🎂 ${label.birth}: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? '모름'}
 
-🌿 사주 구성:
+🌿 ${label.saju}:
 - 연: ${saju.year.stem}${saju.year.branch}
 - 월: ${saju.month.stem}${saju.month.branch}
 - 일: ${saju.day.stem}${saju.day.branch}
 - 시: ${saju.hour?.stem ?? '-'}${saju.hour?.branch ?? '-'}
 
-🔮 오행 분포:
-- 목: ${saju.elementCounts['목'] ?? 0}
-- 화: ${saju.elementCounts['화'] ?? 0}
-- 토: ${saju.elementCounts['토'] ?? 0}
-- 금: ${saju.elementCounts['금'] ?? 0}
-- 수: ${saju.elementCounts['수'] ?? 0}
+🔮 Element Count:
+- 목(Wood): ${saju.elementCounts['목'] ?? 0}
+- 화(Fire): ${saju.elementCounts['화'] ?? 0}
+- 토(Earth): ${saju.elementCounts['토'] ?? 0}
+- 금(Metal): ${saju.elementCounts['금'] ?? 0}
+- 수(Water): ${saju.elementCounts['수'] ?? 0}
 
-💪 강한 오행: ${saju.strongElement}
-🧂 약한 오행: ${saju.weakElement}
+💪 ${label.strong}: ${saju.strongElement}
+🧂 ${label.weak}: ${saju.weakElement}
 `.trim()
 }
+
 
 export function getBaseSajuPrompt(input: PromptInput): string {
   const lang = input.lang ?? 'ko'
