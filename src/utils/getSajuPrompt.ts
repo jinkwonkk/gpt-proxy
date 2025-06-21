@@ -103,9 +103,12 @@ function getBaseInfo(input: PromptInput) {
     es: { 목: 'Madera', 화: 'Fuego', 토: 'Tierra', 금: 'Metal', 수: 'Agua' },
   }
 
-  const label = labelMap[lang]
-  const genderText = genderLabelMap[lang][gender as 'male' | 'female']
-  const elementText = elementNameMap[lang]
+  const label = labelMap[lang] ?? labelMap['ko']
+  const genderText = genderLabelMap[lang]?.[gender as 'male' | 'female'] ?? gender
+  const elementText = elementNameMap[lang] ?? elementNameMap['ko']
+  const counts = saju?.elementCounts ?? {}
+  const strong = saju?.strongElement ?? '-'
+  const weak = saju?.weakElement ?? '-'
 
   return `
 🧾 ${label.name}: ${userName}
@@ -113,27 +116,26 @@ function getBaseInfo(input: PromptInput) {
 🎂 ${label.birth}: ${birth.year}-${birth.month}-${birth.day} ${birth.hour ?? '모름'}
 
 🌿 ${label.saju}:
-- 연: ${saju.year.stem}${saju.year.branch}
-- 월: ${saju.month.stem}${saju.month.branch}
-- 일: ${saju.day.stem}${saju.day.branch}
-- 시: ${saju.hour?.stem ?? '-'}${saju.hour?.branch ?? '-'}
+- 연: ${saju?.year?.stem ?? '-'}${saju?.year?.branch ?? '-'}
+- 월: ${saju?.month?.stem ?? '-'}${saju?.month?.branch ?? '-'}
+- 일: ${saju?.day?.stem ?? '-'}${saju?.day?.branch ?? '-'}
+- 시: ${saju?.hour?.stem ?? '-'}${saju?.hour?.branch ?? '-'}
 
 🔮 Element Count:
-- ${elementText.목}: ${saju.elementCounts['목'] ?? 0}
-- ${elementText.화}: ${saju.elementCounts['화'] ?? 0}
-- ${elementText.토}: ${saju.elementCounts['토'] ?? 0}
-- ${elementText.금}: ${saju.elementCounts['금'] ?? 0}
-- ${elementText.수}: ${saju.elementCounts['수'] ?? 0}
+- ${elementText.목}: ${counts['목'] ?? 0}
+- ${elementText.화}: ${counts['화'] ?? 0}
+- ${elementText.토}: ${counts['토'] ?? 0}
+- ${elementText.금}: ${counts['금'] ?? 0}
+- ${elementText.수}: ${counts['수'] ?? 0}
 
-💪 ${label.strong}: ${saju.strongElement}
-🧂 ${label.weak}: ${saju.weakElement}
+💪 ${label.strong}: ${elementText[strong as keyof typeof elementText] ?? strong}
+🧂 ${label.weak}: ${elementText[weak as keyof typeof elementText] ?? weak}
 `.trim()
 }
 
-
 export function getBaseSajuPrompt(input: PromptInput): string {
   const lang = input.lang ?? 'ko'
-  const instruction = basePromptTexts[lang]
+  const instruction = basePromptTexts[lang] ?? basePromptTexts['ko']
   const baseInfo = getBaseInfo(input)
   return `🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}\n\n${baseInfo}\n\n---\n\n${instruction}`
 }
@@ -143,10 +145,12 @@ export function getItemSajuPrompt(input: PromptInput): string {
   if (!item) return ''
   const lang = input.lang ?? 'ko'
   const report = promptTexts[item]?.[lang]
+
   if (!report) {
-  console.warn(`⚠️ 다국어 프롬프트 누락: item=${item}, lang=${lang}`)
-  return basePromptTexts[lang] // 또는 return '' 로 유지 가능
+    console.warn(`⚠️ 다국어 프롬프트 누락: item=${item}, lang=${lang}`)
+    return basePromptTexts[lang] ?? basePromptTexts['ko']
   }
+
   const baseInfo = getBaseInfo(input)
   return `🔮 ${lang === 'ko' ? '아래는 사용자의 사주 정보입니다.' : 'Here is the user’s saju information:'}\n\n${baseInfo}\n\n---\n\n${report}`
 }
