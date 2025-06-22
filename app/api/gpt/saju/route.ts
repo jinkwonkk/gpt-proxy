@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // ✅ 빈 프롬프트 방지
     if (!prompt || prompt.trim().length === 0) {
       console.warn('⚠️ 생성된 프롬프트가 비어 있음', { selectedItems, lang })
       return new NextResponse(JSON.stringify({ error: '프롬프트 생성 실패' }), {
@@ -95,30 +94,35 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder()
 
     const pump = async () => {
+      let partial = ''
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n').filter(line => line.trim() !== '')
-       for (const line of lines) {
-      if (line.trim().startsWith('data:')) {
-       try {
-         const json = JSON.parse(line.trim().replace(/^data:\s*/, ''))
-         const content = json.choices?.[0]?.delta?.content
-         if (content) {
-         await writer.write(encoder.encode(content))
-        }
-        } catch (err) {
-        console.warn('⚠️ JSON 파싱 실패:', line.trim())
+
+        partial += decoder.decode(value, { stream: true })
+        const lines = partial.split('\n')
+        partial = lines.pop() || ''
+
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed.startsWith('data:')) continue
+
+          try {
+            const json = JSON.parse(trimmed.replace(/^data:\s*/, ''))
+            const content = json.choices?.[0]?.delta?.content
+            if (content) {
+              await writer.write(encoder.encode(content))
+            }
+          } catch (err) {
+            console.warn('⚠️ JSON 파싱 실패:', trimmed)
+          }
         }
       }
+
+      await writer.close()
     }
-  }
-    }
-    // ✅ 스트리밍 로직과 응답을 분리
-    pump().catch(error => {
-      console.error('❌ 스트리밍 처리 중 오류:', error)
-    })
+
+    await pump() // ✅ 반드시 끝까지 읽고 나서 응답
 
     return new Response(readable, {
       status: 200,
