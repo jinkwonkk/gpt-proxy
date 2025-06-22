@@ -100,14 +100,21 @@ export async function POST(req: NextRequest) {
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
         const lines = chunk.split('\n').filter(line => line.trim() !== '')
-        for (const line of lines) {
-          await writer.write(encoder.encode(`data: ${line.trim()}\n\n`))
+       for (const line of lines) {
+      if (line.trim().startsWith('data:')) {
+       try {
+         const json = JSON.parse(line.trim().replace(/^data:\s*/, ''))
+         const content = json.choices?.[0]?.delta?.content
+         if (content) {
+         await writer.write(encoder.encode(content))
+        }
+        } catch (err) {
+        console.warn('⚠️ JSON 파싱 실패:', line.trim())
         }
       }
-      await writer.write(encoder.encode('data: [DONE]\n\n'))
-      await writer.close()
     }
-
+  }
+    }
     // ✅ 스트리밍 로직과 응답을 분리
     pump().catch(error => {
       console.error('❌ 스트리밍 처리 중 오류:', error)
