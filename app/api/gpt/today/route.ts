@@ -27,7 +27,7 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    console.log('[POST /today] 요청 body:', JSON.stringify(body, null, 2))
+    console.log('[POST /saju] 요청 body:', JSON.stringify(body, null, 2))
 
     const { info, sajuData, sectionIndex } = body
 

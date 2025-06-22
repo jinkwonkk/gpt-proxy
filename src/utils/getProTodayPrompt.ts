@@ -1,7 +1,6 @@
 // src/utils/getProTodayPrompt.ts
-import type { TodayInfo } from '@/types/saju'
+import type { PromptInputInfo } from '@/types/saju'
 
-// 언어별 섹션 제목 정의
 const sectionTitles = {
   ko: [
     '오늘의 총운 (전반적 기운과 흐름 요약)',
@@ -49,79 +48,46 @@ const sectionTitles = {
   ],
 } as const
 
-export function getProTodayPrompt(info: TodayInfo, sectionIndex: number): string {
-  const { name, birth, today, saju } = info
-  const lang = info.lang ?? 'ko'
+export function getProTodayPrompt(info: PromptInputInfo, sectionIndex: number): string {
+  const { name, gender, birth, today, lang = 'ko' } = info
   const sectionList = sectionTitles[lang] ?? sectionTitles.ko
   const selectedSection = sectionList[sectionIndex] || '기타 항목'
 
   const baseInfo = {
-    ko: `
-당신은 ${birth.year}년 ${birth.month}월 ${birth.day}일생 ${name}님입니다.
-오늘은 ${today} (${new Date().getFullYear()}년 기준)이며, 사주 명식은 다음과 같습니다:
-- 연주: ${saju.year.stem}${saju.year.branch}
-- 월주: ${saju.month.stem}${saju.month.branch}
-- 일주: ${saju.day.stem}${saju.day.branch}
-- 시주: ${saju.hour.stem}${saju.hour.branch}
-
-오행 분포는 다음과 같습니다:
-${Object.entries(saju.elementCounts).map(([el, cnt]) => `- ${el}: ${cnt}`).join('\n')}
-강한 오행은 ${saju.strongElement}, 약한 오행은 ${saju.weakElement}입니다.
-`.trim(),
-
-    en: `
-You are ${name}, born in ${birth.year}-${birth.month}-${birth.day}.
-Today is ${today} (as of ${new Date().getFullYear()}). Your Four Pillars are:
-- Year Pillar: ${saju.year.stem}${saju.year.branch}
-- Month Pillar: ${saju.month.stem}${saju.month.branch}
-- Day Pillar: ${saju.day.stem}${saju.day.branch}
-- Hour Pillar: ${saju.hour.stem}${saju.hour.branch}
-
-Your Five Elements distribution:
-${Object.entries(saju.elementCounts).map(([el, cnt]) => `- ${el}: ${cnt}`).join('\n')}
-Your strong element is ${saju.strongElement}, and your weak element is ${saju.weakElement}.
-`.trim(),
-
-    ja: `
-あなたは ${birth.year}年${birth.month}月${birth.day}日生まれの ${name} さんです。
-今日は ${today}（${new Date().getFullYear()}年時点）であり、四柱推命は以下の通りです：
-- 年柱: ${saju.year.stem}${saju.year.branch}
-- 月柱: ${saju.month.stem}${saju.month.branch}
-- 日柱: ${saju.day.stem}${saju.day.branch}
-- 時柱: ${saju.hour.stem}${saju.hour.branch}
-
-五行の分布は以下の通りです：
-${Object.entries(saju.elementCounts).map(([el, cnt]) => `- ${el}: ${cnt}`).join('\n')}
-強い五行は ${saju.strongElement}、弱い五行は ${saju.weakElement} です。
-`.trim(),
-
-    es: `
-Eres ${name}, nacido(a) en ${birth.year}-${birth.month}-${birth.day}.
-Hoy es ${today} (año ${new Date().getFullYear()}), y tus Cuatro Pilares del Destino son:
-- Pilar del Año: ${saju.year.stem}${saju.year.branch}
-- Pilar del Mes: ${saju.month.stem}${saju.month.branch}
-- Pilar del Día: ${saju.day.stem}${saju.day.branch}
-- Pilar de la Hora: ${saju.hour.stem}${saju.hour.branch}
-
-Distribución de los cinco elementos:
-${Object.entries(saju.elementCounts).map(([el, cnt]) => `- ${el}: ${cnt}`).join('\n')}
-Tu elemento fuerte es ${saju.strongElement}, y tu elemento débil es ${saju.weakElement}.
-`.trim(),
+    ko: `당신은 ${birth.year}년 ${birth.month}월 ${birth.day}일에 태어난 ${gender === 'male' ? '남성' : '여성'} ${name}님입니다. 오늘은 ${today}입니다.`,
+    en: `You are ${name}, born on ${birth.year}-${birth.month}-${birth.day}. Today is ${today}.`,
+    ja: `${birth.year}年${birth.month}月${birth.day}日生まれの${gender === 'male' ? '男性' : '女性'}${name}さんですね。本日は${today}です。`,
+    es: `Eres ${name}, nacido el ${birth.day}/${birth.month}/${birth.year}. Hoy es ${today}.`,
   }
 
   const instructions: Record<string, string> = {
-    ko: `지금부터 아래 항목 **[${sectionIndex + 1}. ${selectedSection}]** 에 대해서만 분석해주세요.
+    ko: `
+🔮 오늘의 해석 주제: [${sectionIndex + 1}. ${selectedSection}]
 
-고객이 만족할 만큼 **전문적이고 구체적인 사주 기반 해석**을 해주세요. 중복 표현 없이 설득력 있게 작성하세요.`,
-    en: `Now analyze only the section **[${sectionIndex + 1}. ${selectedSection}]**.
+사주 용어나 어려운 표현 없이, 친절하고 이해하기 쉽게 설명해주세요.
+운세 상담가처럼 부드럽고 따뜻한 말투로 하루를 안내해주세요.
+`.trim(),
 
-Provide a highly detailed and insightful Four Pillars interpretation that satisfies the client. Avoid repetition and be persuasive.`,
-    ja: `以下の項目 **[${sectionIndex + 1}. ${selectedSection}]** のみを分析してください。
+    en: `
+🔮 Topic of the day: [${sectionIndex + 1}. ${selectedSection}]
 
-お客様が満足できるように、四柱推命に基づいた専門的かつ具体的な分析を繰り返し表現なく書いてください。`,
-    es: `Por favor analiza solo el siguiente punto **[${sectionIndex + 1}. ${selectedSection}]**.
+Please avoid astrology jargon or difficult terms.
+Speak like a friendly fortune teller and make it easy and pleasant to read.
+`.trim(),
 
-Haz un análisis profundo y convincente basado en los Cuatro Pilares, sin repeticiones y con detalle profesional.`,
+    ja: `
+🔮 今日のテーマ: [${sectionIndex + 1}. ${selectedSection}]
+
+占い用語や難しい言葉は使わず、わかりやすく丁寧に説明してください。
+親切な占い師のように、温かく話しかけるような文体でお願いします。
+`.trim(),
+
+    es: `
+🔮 Tema del día: [${sectionIndex + 1}. ${selectedSection}]
+
+Evita palabras difíciles o jerga de astrología.
+Escribe como un consejero amable, con un tono cálido y claro.
+`.trim(),
   }
 
   return `${baseInfo[lang]}\n\n${instructions[lang]}`.trim()
