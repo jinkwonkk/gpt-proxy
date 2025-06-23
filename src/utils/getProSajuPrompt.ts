@@ -1,5 +1,5 @@
 // src/utils/getProSajuPrompt.ts
-import type { PromptInputInfo } from '@/types/saju'
+import type { PromptInputInfo } from '../types/saju'
 
 // 언어별 섹션 제목 정의
 const sectionTitles = {
