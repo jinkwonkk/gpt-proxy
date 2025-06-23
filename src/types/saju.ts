@@ -55,6 +55,7 @@ export interface NewYearInfo {
     hour?: number;
   };
   year: number; // 조회 연도
+  lang: 'ko' | 'en' | 'ja' | 'es' 
   saju: {
     year: { stem: string; branch: string };
     month: { stem: string; branch: string };

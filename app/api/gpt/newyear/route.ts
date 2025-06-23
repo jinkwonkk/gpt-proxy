@@ -1,12 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getProNewYearPrompt } from '@/utils/getProNewYearPrompt'
-import type { NewYearInfo } from '@/types/saju'
 
-export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-//dkdxptmxm
-// CORS 헤더
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -16,7 +13,7 @@ function corsHeaders() {
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
+  return new Response(null, {
     status: 204,
     headers: {
       ...corsHeaders(),
@@ -27,26 +24,51 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { info, sajuData } = await req.json()
+    const body = await req.json()
+    console.log('[POST /newyear] 요청 body:', JSON.stringify(body, null, 2))
 
-    if (!info || !sajuData) {
-      return new NextResponse(JSON.stringify({ error: 'Missing required data' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
+    const { info, sajuData, sectionIndex } = body
+
+    // 필수 값 검사
+    if (
+      !info?.name ||
+      !info?.gender ||
+      !info?.birth?.year ||
+      !info?.birth?.month ||
+      !info?.birth?.day ||
+      typeof info?.birth?.hour !== 'number' ||
+      !info?.year ||
+      !info?.lang ||
+      sectionIndex === undefined ||
+      sectionIndex < 0 || sectionIndex > 8 ||
+      !sajuData?.year ||
+      !sajuData?.month ||
+      !sajuData?.day ||
+      !sajuData?.hour ||
+      !sajuData?.elementCounts ||
+      !sajuData?.strongElement ||
+      !sajuData?.weakElement
+    ) {
+      return new Response(
+        JSON.stringify({ error: '필수 데이터 누락 또는 sectionIndex 오류.' }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders(),
+            'Content-Type': 'application/json',
+          },
+        }
+      )
     }
 
-    const fullInfo: NewYearInfo = { ...info, saju: sajuData }
-    const prompt = getProNewYearPrompt(fullInfo)
+    const lang = info.lang ?? 'ko'
+    const prompt = getProNewYearPrompt({ ...info, saju: sajuData, lang }, sectionIndex)
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY || ''}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o',
@@ -55,21 +77,71 @@ export async function POST(req: NextRequest) {
         top_p: 1,
         frequency_penalty: 0.2,
         presence_penalty: 0.2,
-        stream: false,
-      })
+        stream: true,
+      }),
     })
 
-    const result = await response.json()
+    if (!response.body) {
+      return new Response(JSON.stringify({ error: 'OpenAI 응답 body가 없습니다.' }), {
+        status: 500,
+        headers: {
+          ...corsHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
+    }
 
-    return new NextResponse(JSON.stringify(result), {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
+
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed.startsWith('data:')) continue
+            const jsonStr = trimmed.replace(/^data:\s*/, '')
+            if (jsonStr === '[DONE]') {
+              controller.close()
+              return
+            }
+
+            try {
+              const parsed = JSON.parse(jsonStr)
+              const content = parsed.choices?.[0]?.delta?.content
+              if (content) {
+                controller.enqueue(encoder.encode(content))
+              }
+            } catch (e) {
+              console.warn('JSON 파싱 오류:', jsonStr)
+            }
+          }
+        }
+
+        controller.close()
+      },
+    })
+
+    return new Response(stream, {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
       },
     })
   } catch (error: any) {
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+    console.error('[POST /newyear] 서버 오류:', error.message)
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
         ...corsHeaders(),
