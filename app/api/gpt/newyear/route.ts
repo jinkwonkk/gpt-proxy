@@ -48,18 +48,24 @@ export async function POST(req: NextRequest) {
       !sajuData?.elementCounts ||
       !sajuData?.strongElement ||
       !sajuData?.weakElement
-    ) {
-      return new Response(
-        JSON.stringify({ error: '필수 데이터 누락 또는 sectionIndex 오류.' }),
-        {
-          status: 400,
-          headers: {
-            ...corsHeaders(),
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-    }
+    )  {
+  console.log('[❗️필드 누락 진단]', {
+    name: info?.name,
+    gender: info?.gender,
+    birth: info?.birth,
+    lang: info?.lang,
+    year: info?.year,
+    sectionIndex,
+    sajuData,
+  })
+  return new Response(JSON.stringify({ error: '필수 데이터 누락 또는 sectionIndex 오류.' }), {
+    status: 400,
+    headers: {
+      ...corsHeaders(),
+      'Content-Type': 'application/json',
+    },
+  })
+}
 
     const lang = info.lang ?? 'ko'
     const prompt = getProNewYearPrompt({ ...info, saju: sajuData, lang }, sectionIndex)
