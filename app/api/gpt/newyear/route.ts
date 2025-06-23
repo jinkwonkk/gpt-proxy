@@ -30,25 +30,25 @@ export async function POST(req: NextRequest) {
     const { info, sajuData, sectionIndex } = body
 
     // 필수 값 검사
-    if (
-      !info?.name ||
-      !info?.gender ||
-      !info?.birth?.year ||
-      !info?.birth?.month ||
-      !info?.birth?.day ||
-      typeof info?.birth?.hour !== 'number' ||
-      !info?.year ||
-      !info?.lang ||
-      sectionIndex === undefined ||
-      sectionIndex < 0 || sectionIndex > 8 ||
-      !sajuData?.year ||
-      !sajuData?.month ||
-      !sajuData?.day ||
-      !sajuData?.hour ||
-      !sajuData?.elementCounts ||
-      !sajuData?.strongElement ||
-      !sajuData?.weakElement
-    )  {
+ if ( 
+  !info?.name ||
+  !info?.gender ||
+  !info?.birth?.year ||
+  !info?.birth?.month ||
+  !info?.birth?.day ||
+  // ⛔ hour는 필수 아님 → 조건 제거
+  !info?.year ||
+  !info?.lang ||
+  sectionIndex === undefined ||
+  sectionIndex < 0 || sectionIndex > 8 ||
+  !sajuData?.year ||
+  !sajuData?.month ||
+  !sajuData?.day ||
+  // ⛔ sajuData.hour도 필수 아님 → 조건 제거
+  !sajuData?.elementCounts ||
+  !sajuData?.strongElement ||
+  !sajuData?.weakElement
+)  {
   console.log('[❗️필드 누락 진단]', {
     name: info?.name,
     gender: info?.gender,
