@@ -1,7 +1,7 @@
-// /api/gpt/saju/route.ts
+// app/api/gpt/saju/route.ts
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getBaseSajuPrompt, getItemSajuPrompt } from '@/utils/getSajuPrompt'
+import { NextRequest } from 'next/server'
+import { getProSajuPrompt } from '@/utils/getProSajuPrompt'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -15,7 +15,7 @@ function corsHeaders() {
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, {
+  return new Response(null, {
     status: 204,
     headers: {
       ...corsHeaders(),
@@ -27,45 +27,46 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { userName, gender, birth, saju, selectedItems, lang = 'ko' } = body
+    console.log('[POST /today] 요청 body:', JSON.stringify(body, null, 2))
 
-    if (!userName || !gender || !birth?.year || !birth?.month || !birth?.day || !saju || !Array.isArray(selectedItems)) {
-      return new NextResponse(JSON.stringify({ error: '필수 항목 누락' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
+    const { info, sajuData, sectionIndex } = body
+
+    // 필수 정보 누락 검사
+    if (
+      !info?.name ||
+      !info?.gender ||
+      !info?.birth?.year ||
+      !info?.birth?.month ||
+      !info?.birth?.day ||
+      typeof info?.birth?.hour !== 'number' ||
+      sectionIndex === undefined ||
+      sectionIndex < 0 || sectionIndex > 8 ||
+      !sajuData?.year ||
+      !sajuData?.month ||
+      !sajuData?.day ||
+      !sajuData?.hour ||
+      !sajuData?.elementCounts ||
+      !sajuData?.strongElement ||
+      !sajuData?.weakElement
+    ) {
+      return new Response(
+        JSON.stringify({
+          error: '필수 데이터 누락 또는 sectionIndex 오류.',
+        }),
+        {
+          status: 400,
+          headers: {
+            ...corsHeaders(),
+            'Content-Type': 'application/json',
+          },
+        }
+      )
     }
 
-    let prompt = ''
-    if (selectedItems.length === 0) {
-      prompt = getBaseSajuPrompt({ userName, gender, birth, saju, lang })
-    } else if (selectedItems.length === 1) {
-      prompt = getItemSajuPrompt({ userName, gender, birth, saju, item: selectedItems[0], lang })
-    } else {
-      return new NextResponse(JSON.stringify({ error: '항목은 한 번에 하나만 요청해야 합니다.' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
-    }
+    const lang = info.lang ?? 'ko'
+    const prompt = getProSajuPrompt({ ...info, saju: sajuData, lang }, sectionIndex)
 
-    if (!prompt || prompt.trim().length === 0) {
-      console.warn('⚠️ 생성된 프롬프트가 비어 있음', { selectedItems, lang })
-      return new NextResponse(JSON.stringify({ error: '프롬프트 생성 실패' }), {
-        status: 400,
-        headers: {
-          ...corsHeaders(),
-          'Content-Type': 'application/json',
-        },
-      })
-    }
-
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -82,61 +83,67 @@ export async function POST(req: NextRequest) {
       }),
     })
 
-    if (!openaiResponse.ok || !openaiResponse.body) {
-      console.error('❌ OpenAI 응답 오류 또는 body 없음', openaiResponse.status)
-      throw new Error(`OpenAI 응답 오류: ${openaiResponse.status}`)
+    if (!response.body) {
+      return new Response(JSON.stringify({ error: 'OpenAI 응답 body가 없습니다.' }), {
+        status: 500,
+        headers: {
+          ...corsHeaders(),
+          'Content-Type': 'application/json',
+        },
+      })
     }
 
-    const { readable, writable } = new TransformStream()
-    const writer = writable.getWriter()
-    const reader = openaiResponse.body.getReader()
-    const decoder = new TextDecoder()
     const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
 
-    const pump = async () => {
-      let partial = ''
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
 
-        partial += decoder.decode(value, { stream: true })
-        const lines = partial.split('\n')
-        partial = lines.pop() || ''
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
 
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (!trimmed.startsWith('data:')) continue
-
-          try {
-            const json = JSON.parse(trimmed.replace(/^data:\s*/, ''))
-            const content = json.choices?.[0]?.delta?.content
-            if (content) {
-              await writer.write(encoder.encode(content))
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed.startsWith('data:')) continue
+            const jsonStr = trimmed.replace(/^data:\s*/, '')
+            if (jsonStr === '[DONE]') {
+              controller.close()
+              return
             }
-          } catch (err) {
-            console.warn('⚠️ JSON 파싱 실패:', trimmed)
+
+            try {
+              const parsed = JSON.parse(jsonStr)
+              const content = parsed.choices?.[0]?.delta?.content
+              if (content) {
+                controller.enqueue(encoder.encode(content))
+              }
+            } catch (e) {
+              console.warn('JSON 파싱 오류:', jsonStr)
+            }
           }
         }
-      }
 
-      await writer.close()
-    }
+        controller.close()
+      },
+    })
 
-    await pump() // ✅ 반드시 끝까지 읽고 나서 응답
-
-    return new Response(readable, {
+    return new Response(stream, {
       status: 200,
       headers: {
         ...corsHeaders(),
-        'Content-Type': 'text/event-stream',
+        'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-        'Transfer-Encoding': 'chunked',
       },
     })
   } catch (error: any) {
-    console.error('❌ 서버 오류:', error)
-    return new NextResponse(JSON.stringify({ error: error.message }), {
+    console.error('[POST /today] 서버 오류:', error.message)
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
         ...corsHeaders(),
@@ -145,3 +152,4 @@ export async function POST(req: NextRequest) {
     })
   }
 }
+
