@@ -26,12 +26,21 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const selfInfo: PersonInfo = body.selfInfo
-    const partnerInfo: PersonInfo = body.partnerInfo
-    const sajuData: { self: SajuResult; partner: SajuResult } = body.sajuData
-    const sectionPrompt: string = body.sectionPrompt
+    const { selfInfo, partnerInfo, sajuData, sectionIndex } = body
 
-    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, sectionPrompt)
+    if (
+      !selfInfo?.name || !selfInfo?.gender || !selfInfo?.birth ||
+      !partnerInfo?.name || !partnerInfo?.gender || !partnerInfo?.birth ||
+      typeof sectionIndex !== 'number' || sectionIndex < 0 || sectionIndex > 5
+    ) {
+      return new NextResponse(JSON.stringify({ error: '❌ 필수 데이터 또는 sectionIndex 오류' }), {
+        status: 400,
+        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+      })
+    }
+
+    const lang = selfInfo?.lang || 'ko'
+    const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, sectionIndex, lang)
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -52,14 +61,52 @@ export async function POST(req: NextRequest) {
 
     if (!openaiRes.ok || !openaiRes.body) throw new Error('OpenAI 응답 실패')
 
-    return new Response(openaiRes.body, {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = openaiRes.body!.getReader()
+        const decoder = new TextDecoder('utf-8')
+        let buffer = ''
+
+        while (true) {
+          const { value, done } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed.startsWith('data:')) continue
+            const jsonStr = trimmed.replace(/^data:\s*/, '')
+            if (jsonStr === '[DONE]') {
+              controller.close()
+              return
+            }
+
+            try {
+              const parsed = JSON.parse(jsonStr)
+              const content = parsed.choices?.[0]?.delta?.content
+              if (content) {
+                controller.enqueue(encoder.encode(content))
+              }
+            } catch (err) {
+              console.warn('JSON 파싱 오류:', jsonStr)
+            }
+          }
+        }
+
+        controller.close()
+      },
+    })
+
+    return new Response(stream, {
       status: 200,
       headers: {
         ...corsHeaders(),
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Transfer-Encoding': 'chunked',
       },
     })
   } catch (err: any) {
