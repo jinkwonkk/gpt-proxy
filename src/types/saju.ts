@@ -22,8 +22,8 @@ export interface SajuResult {
   dayStemDesc: string;
   spouseHint: string;
 }
-
-export interface TodayInfo {
+//src/types/saju.ts
+export interface PromptInputInfo {
   name: string;
   gender: 'male' | 'female';
   birth: {
