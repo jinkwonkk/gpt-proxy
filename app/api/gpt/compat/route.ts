@@ -26,7 +26,7 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { selfInfo, partnerInfo, sajuData, sectionIndex } = body
+    const { selfInfo, partnerInfo, sajuData, sectionIndex, lang: bodyLang } = body
 
     if (
       !selfInfo?.name || !selfInfo?.gender || !selfInfo?.birth ||
@@ -39,7 +39,12 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    const lang = selfInfo?.lang || 'ko'
+    // ✅ 안전한 lang 타입 지정
+    const supportedLangs = ['ko', 'en', 'ja', 'es'] as const
+    type Lang = typeof supportedLangs[number]
+    const isSupportedLang = (value: any): value is Lang => supportedLangs.includes(value)
+    const lang: Lang = isSupportedLang(bodyLang) ? bodyLang : 'ko'
+
     const prompt = getProCouplePrompt(selfInfo, partnerInfo, sajuData, sectionIndex, lang)
 
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
