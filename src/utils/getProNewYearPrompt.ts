@@ -54,7 +54,8 @@ export function getProNewYearPrompt(
   const { name, gender, birth, year, saju, lang = 'ko' } = info
   const { year: y, month, day, hour, elementCounts, strongElement, weakElement } = saju
 
-  const baseIntro = `
+  const introMap: Record<string, string> = {
+    ko: `
 당신은 ${birth.year}년생 ${name}님이며, 조회 연도는 ${year}년입니다.
 
 사주 명식:
@@ -66,17 +67,69 @@ export function getProNewYearPrompt(
 오행 분포:
 ${Object.entries(elementCounts).map(([k, v]) => `- ${k}: ${v}개`).join('\n')}
 강한 오행: ${strongElement}, 약한 오행: ${weakElement}
-  `.trim()
+    `.trim(),
 
+    en: `
+You were born in ${birth.year}, ${name}, and this reading is for the year ${year}.
+
+Saju Components:
+- Year Pillar: ${y.stem}${y.branch}
+- Month Pillar: ${month.stem}${month.branch}
+- Day Pillar: ${day.stem}${day.branch}
+- Hour Pillar: ${hour.stem}${hour.branch}
+
+Element Distribution:
+${Object.entries(elementCounts).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
+Strongest Element: ${strongElement}, Weakest Element: ${weakElement}
+    `.trim(),
+
+    ja: `
+${birth.year}年生まれの${name}様、対象年は${year}年です。
+
+四柱名式:
+- 年柱: ${y.stem}${y.branch}
+- 月柱: ${month.stem}${month.branch}
+- 日柱: ${day.stem}${day.branch}
+- 時柱: ${hour.stem}${hour.branch}
+
+五行の分布:
+${Object.entries(elementCounts).map(([k, v]) => `- ${k}: ${v}個`).join('\n')}
+強い五行: ${strongElement}、弱い五行: ${weakElement}
+    `.trim(),
+
+    es: `
+Usted nació en el año ${birth.year}, ${name}, y esta lectura es para el año ${year}.
+
+Pilares del Saju:
+- Pilar del Año: ${y.stem}${y.branch}
+- Pilar del Mes: ${month.stem}${month.branch}
+- Pilar del Día: ${day.stem}${day.branch}
+- Pilar de la Hora: ${hour.stem}${hour.branch}
+
+Distribución de los elementos:
+${Object.entries(elementCounts).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
+Elemento más fuerte: ${strongElement}, Elemento más débil: ${weakElement}
+    `.trim(),
+  }
+
+  const baseIntro = introMap[lang] || introMap['ko']
   const section = sections[lang]?.[sectionIndex] || sections['ko'][sectionIndex]
 
   return `
 ${baseIntro}
 
-🎯 아래 항목을 전문적으로 분석해주세요:
+🎯 ${lang === 'ko' ? '아래 항목을 전문적으로 분석해주세요:' : 
+     lang === 'en' ? 'Please provide a professional analysis of the following topic:' :
+     lang === 'ja' ? '以下のテーマについて専門的な分析を行ってください:' :
+     lang === 'es' ? 'Por favor, proporcione un análisis profesional del siguiente tema:' :
+     '분석 항목:'}
+
 ${section}
 
-- 자연스럽고 설득력 있는 리포트 스타일로 작성해주세요.
-- 고객이 만족할 수 있도록, 구체적인 조언과 예시를 포함해주세요.
-`.trim()
+- ${lang === 'ko' ? '자연스럽고 설득력 있는 리포트 스타일로 작성해주세요.\n- 고객이 만족할 수 있도록, 구체적인 조언과 예시를 포함해주세요.' :
+     lang === 'en' ? 'Write in a natural and convincing report style.\n- Include practical advice and concrete examples that will satisfy the customer.' :
+     lang === 'ja' ? '自然で説得力のあるレポート形式で記述してください。\n- 顧客が満足できるよう、具体的なアドバイスや例を含めてください。' :
+     lang === 'es' ? 'Escriba en un estilo de informe natural y convincente.\n- Incluya consejos prácticos y ejemplos concretos que satisfagan al cliente.' :
+     ''}
+  `.trim()
 }

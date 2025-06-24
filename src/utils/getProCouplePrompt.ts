@@ -6,27 +6,20 @@ export function getProCouplePrompt(
   partnerInfo: PersonInfo,
   sajuData: { self: SajuResult; partner: SajuResult },
   sectionIndex: number,
-  lang: 'ko' | 'en' | 'ja' | 'es'
+  lang: keyof typeof couplePromptTexts
 ): string {
   const formatGanji = (year?: string, month?: string, day?: string, hour?: string) =>
-    [year, month, day, hour].filter(Boolean).join(' / ') || '자료 없음'
+    [year, month, day, hour].filter(Boolean).join(' / ') || (lang === 'ko' ? '자료 없음' : 'N/A')
 
   const formatLine = (label: string, value?: string) =>
-    `${label}: ${value?.trim() || '해당 데이터 없음'}`
+    `${label}: ${value?.trim() || (lang === 'ko' ? '해당 데이터 없음' : 'Not available')}`
 
   const currentYear = new Date().getFullYear()
 
-  // ✅ sectionPrompt 배열 안전 접근
-  const sectionPrompts = [
-    couplePromptTexts[lang]?.section1,
-    couplePromptTexts[lang]?.section2,
-    couplePromptTexts[lang]?.section3,
-    couplePromptTexts[lang]?.section4,
-    couplePromptTexts[lang]?.section5,
-    couplePromptTexts[lang]?.section6,
-  ] as const
-
-  const sectionPrompt = sectionPrompts[sectionIndex] || ''
+  // ✅ sectionKeys 배열로 안전하게 접근
+  const sectionKeys = ['section1', 'section2', 'section3', 'section4', 'section5', 'section6'] as const
+  const selectedKey = sectionKeys[sectionIndex] || 'section1'
+  const sectionPrompt = couplePromptTexts[lang]?.[selectedKey] || ''
 
   return `
 당신은 사주명리학에 정통한 전문가입니다. 아래 제공된 두 사람의 생년월일, 성별, 간지, 오행 분포, 일지 및 기타 핵심 정보를 바탕으로, 궁합에 대한 전문적인 리포트를 작성해주세요.
