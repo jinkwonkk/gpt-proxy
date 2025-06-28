@@ -27,24 +27,23 @@ export async function OPTIONS() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    console.log('[POST /today] 요청 body:', JSON.stringify(body, null, 2))
+    console.log('[POST /saju] 요청 body:', JSON.stringify(body, null, 2))
 
     const { info, sajuData, sectionIndex } = body
 
-    // 필수 정보 누락 검사
+    // 필수 정보 누락 검사 (시간은 선택사항으로 허용)
     if (
       !info?.name ||
       !info?.gender ||
       !info?.birth?.year ||
       !info?.birth?.month ||
       !info?.birth?.day ||
-      typeof info?.birth?.hour !== 'number' ||
       sectionIndex === undefined ||
       sectionIndex < 0 || sectionIndex > 8 ||
       !sajuData?.year ||
       !sajuData?.month ||
       !sajuData?.day ||
-      !sajuData?.hour ||
+      // sajuData.hour 제거됨
       !sajuData?.elementCounts ||
       !sajuData?.strongElement ||
       !sajuData?.weakElement
@@ -142,7 +141,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('[POST /today] 서버 오류:', error.message)
+    console.error('[POST /saju] 서버 오류:', error.message)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: {
@@ -152,4 +151,3 @@ export async function POST(req: NextRequest) {
     })
   }
 }
-
